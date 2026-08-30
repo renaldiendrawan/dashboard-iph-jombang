@@ -190,8 +190,8 @@ if not df_ringkasan.empty and not df_top5.empty:
             
             df_ringkasan_tabel['Growth IPH (%)'] = df_ringkasan_tabel['Growth IPH (%)'].apply(format_growth)
                 
-            # Menggunakan applymap untuk versi Pandas yang lebih lama
-            st.dataframe(df_ringkasan_tabel.style.applymap(color_arah, subset=['Arah']), 
+            # Menggunakan map karena Streamlit Cloud memakai Pandas versi terbaru
+            st.dataframe(df_ringkasan_tabel.style.map(color_arah, subset=['Arah']), 
                          use_container_width=True, hide_index=True, height=450)
 
 
