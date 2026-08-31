@@ -117,7 +117,7 @@ if uploaded_file is not None:
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
     st.sidebar.success(f"File '{uploaded_file.name}' berhasil ditambahkan ke arsip!")
-    st.experimental_rerun()
+    st.rerun()
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("**File Tersimpan di Server:**")
