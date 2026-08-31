@@ -96,8 +96,14 @@ with col_logo:
         st.info("Logo BPS")
 
 with col_title:
-    st.markdown('<h1 style="color: #FFFFFF;">Dashboard Early Warning IPH</h1>', unsafe_allow_html=True)
-    st.markdown('<h3 style="color: #00A3E0;">Badan Pusat Statistik Kabupaten Jombang</h3>', unsafe_allow_html=True)
+    # Menggunakan HTML tag agar jarak spasi antar judul (margin/padding) rapat dan rapi
+    st.markdown("""
+        <div style="line-height: 1.1;">
+            <h1 style="color: #F58220; margin: 0; padding: 0; font-size: 2.8rem; font-weight: bold;">EWANGI</h1>
+            <h3 style="color: #FFFFFF; margin: 5px 0 0 0; padding: 0;">Dashboard Early Warning IPH</h3>
+            <h5 style="color: #00A3E0; margin: 5px 0 0 0; padding: 0;">Badan Pusat Statistik Kabupaten Jombang</h5>
+        </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
