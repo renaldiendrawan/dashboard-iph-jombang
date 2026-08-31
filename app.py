@@ -45,39 +45,40 @@ def load_all_data():
     
     for file in all_files:
         try:
-            xls = pd.ExcelFile(file, engine='openpyxl')
-            
-            # 1. Load Ringkasan
-            sheet_ringkasan = [s for s in xls.sheet_names if "ringkasan" in s.lower()]
-            if sheet_ringkasan:
-                df_r = pd.read_excel(file, sheet_name=sheet_ringkasan[0], skiprows=2, engine='openpyxl')
-                if 'Bulan - Minggu' in df_r.columns:
-                    df_r = df_r.dropna(subset=['Bulan - Minggu'])
-                    list_ringkasan.append(df_r)
-                else:
-                    st.sidebar.error(f"Kolom 'Bulan - Minggu' tidak ditemukan di {file}.")
-            
-            # 2. Load Top 5
-            sheet_top5 = [s for s in xls.sheet_names if "top 5" in s.lower()]
-            if sheet_top5:
-                df_t_raw = pd.read_excel(file, sheet_name=sheet_top5[0], header=None, engine='openpyxl')
-                current_week = None
-                for index, row in df_t_raw.iterrows():
-                    val = str(row[0]).strip()
-                    if "MINGGU" in val and "s/d" in val:
-                        current_week = val
-                    elif current_week and val.isdigit():
-                        list_top5.append({
-                            "Minggu": current_week,
-                            "Peringkat": int(val),
-                            "Komoditas": row[1],
-                            "Bobot (wi)": row[2],
-                            "Pertumbuhan Harga (%)": row[3],
-                            "Andil thd IPH (%)": row[4],
-                            "Keterangan": row[5]
-                        })
+            # PERBAIKAN: Menggunakan 'with' agar file otomatis DITUTUP (kunci dilepas) setelah dibaca
+            with pd.ExcelFile(file, engine='openpyxl') as xls:
+                
+                # 1. Load Ringkasan
+                sheet_ringkasan = [s for s in xls.sheet_names if "ringkasan" in s.lower()]
+                if sheet_ringkasan:
+                    # Membaca langsung dari objek 'xls' yang sudah dibuka
+                    df_r = pd.read_excel(xls, sheet_name=sheet_ringkasan[0], skiprows=2)
+                    if 'Bulan - Minggu' in df_r.columns:
+                        df_r = df_r.dropna(subset=['Bulan - Minggu'])
+                        list_ringkasan.append(df_r)
+                    else:
+                        st.sidebar.error(f"Kolom 'Bulan - Minggu' tidak ditemukan di {os.path.basename(file)}.")
+                
+                # 2. Load Top 5
+                sheet_top5 = [s for s in xls.sheet_names if "top 5" in s.lower()]
+                if sheet_top5:
+                    df_t_raw = pd.read_excel(xls, sheet_name=sheet_top5[0], header=None)
+                    current_week = None
+                    for index, row in df_t_raw.iterrows():
+                        val = str(row[0]).strip()
+                        if "MINGGU" in val and "s/d" in val:
+                            current_week = val
+                        elif current_week and val.isdigit():
+                            list_top5.append({
+                                "Minggu": current_week,
+                                "Peringkat": int(val),
+                                "Komoditas": row[1],
+                                "Bobot (wi)": row[2],
+                                "Pertumbuhan Harga (%)": row[3],
+                                "Andil thd IPH (%)": row[4],
+                                "Keterangan": row[5]
+                            })
         except Exception as e:
-            # Mengabaikan pesan Permission Denied karena wajar jika file sedang dibuka user
             if "Permission denied" not in str(e):
                 st.sidebar.error(f"Error pada file {os.path.basename(file)}: {e}")
             
@@ -149,13 +150,13 @@ def hapus_file_dialog(nama_file):
             if os.path.exists(file_path_hapus):
                 try:
                     os.remove(file_path_hapus)
+                    st.rerun() # Refresh HANYA jika sukses dihapus
                 except Exception as e:
-                    st.error(f"Gagal menghapus file. Mungkin file sedang digunakan. Error: {e}")
-            st.rerun() # Refresh aplikasi setelah dihapus
+                    st.error(f"Gagal menghapus file. Error: {e}") # Munculkan pesan error jika gagal
     
     with col_batal:
         if st.button("Batal", use_container_width=True):
-            st.rerun() # Menutup dialog jika batal
+            st.rerun()
 
 # Menampilkan daftar file beserta tombol Hapus
 for f_name in os.listdir(DATA_DIR):
