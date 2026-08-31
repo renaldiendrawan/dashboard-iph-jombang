@@ -172,17 +172,23 @@ for f_name in os.listdir(DATA_DIR):
 # --- MEMUAT DATA ---
 df_ringkasan, df_top5 = load_all_data()
 
+# Ekstrak Tahun menggunakan Regex (mengambil 4 digit angka berurutan) untuk keperluan Filter
+if not df_ringkasan.empty:
+    df_ringkasan['Tahun'] = df_ringkasan['Bulan - Minggu'].astype(str).str.extract(r'(\d{4})')
+if not df_top5.empty:
+    df_top5['Tahun'] = df_top5['Minggu'].astype(str).str.extract(r'(\d{4})')
+
 # --- TAMPILAN UTAMA (MENGGUNAKAN TABS) ---
 if not df_ringkasan.empty and not df_top5.empty:
     
-    # Menyiapkan data metrik terbaru
+    # Menyiapkan data metrik terbaru (dari keseluruhan data)
     latest_data = df_ringkasan.iloc[-1]
     minggu_terakhir = latest_data.get('Bulan - Minggu', '-')
     rentang_tanggal = latest_data.get('Rentang Tanggal', '-')
     growth_terakhir = latest_data.get('Growth IPH (%)', 0)
     arah = latest_data.get('Arah', '-')
     
-    st.markdown("#### Ringkasan Periode Terkini")
+    st.markdown("### Ringkasan Periode Terkini")
     col1, col2, col3 = st.columns(3)
     col1.metric("Periode Terakhir Terdata", f"{minggu_terakhir}", f"{rentang_tanggal}", delta_color="off")
     try:
@@ -201,35 +207,44 @@ if not df_ringkasan.empty and not df_top5.empty:
     # TAB 1: GRAFIK TREN & TABEL RINGKASAN
     # ==========================================
     with tab1:
+        # FILTER TAHUN UNTUK TAB 1
+        list_tahun = sorted(df_ringkasan['Tahun'].dropna().unique().tolist(), reverse=True)
+        opsi_tahun_tab1 = ["Semua"] + list_tahun
+        selected_tahun_tab1 = st.selectbox("🗓️ Pilih Periode Data:", opsi_tahun_tab1, key="filter_tab1")
+        
+        # Terapkan filter pada dataframe
+        if selected_tahun_tab1 == "Semua":
+            df_ringkasan_filtered = df_ringkasan.copy()
+        else:
+            df_ringkasan_filtered = df_ringkasan[df_ringkasan['Tahun'] == selected_tahun_tab1].copy()
+
         # 1. Menampilkan Grafik Lebar Penuh
         st.markdown("#### Tren Historis Growth IPH")
-        df_ringkasan['Growth IPH (%)'] = pd.to_numeric(df_ringkasan['Growth IPH (%)'], errors='coerce')
-        fig = px.line(df_ringkasan, x='Bulan - Minggu', y='Growth IPH (%)', markers=True, 
+        df_ringkasan_filtered['Growth IPH (%)'] = pd.to_numeric(df_ringkasan_filtered['Growth IPH (%)'], errors='coerce')
+        
+        fig = px.line(df_ringkasan_filtered, x='Bulan - Minggu', y='Growth IPH (%)', markers=True, 
                       hover_data=['Rentang Tanggal', 'Arah'])
         
-        # MENYAMBUNGKAN GARIS YANG PUTUS (CONNECT GAPS)
+        # Menyambungkan garis yang putus jika ada data kosong
         fig.update_traces(
             line=dict(color='#F58220', width=3), 
             marker=dict(size=8, color='#022B69'),
-            connectgaps=True  # Baris ajaib untuk menyambungkan titik yang hilang
+            connectgaps=True 
         )
-        
         fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.8)
         fig.update_layout(xaxis_title="", yaxis_title="Growth IPH (%)", margin=dict(t=10, b=20),
                           plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig, use_container_width=True)
         
-        st.markdown("---") # Garis pembatas
+        st.markdown("---")
         
         # 2. Menampilkan Tabel di Bawah Grafik
         st.markdown("#### Tabel Data Ringkasan")
-        # Sekarang kita bisa memasukkan kolom 'Rentang Tanggal' karena layarnya luas
-        df_ringkasan_tabel = df_ringkasan[['Bulan - Minggu', 'Rentang Tanggal', 'Growth IPH (%)', 'Arah']].copy()
+        df_ringkasan_tabel = df_ringkasan_filtered[['Bulan - Minggu', 'Rentang Tanggal', 'Growth IPH (%)', 'Arah']].copy()
         
-        # Membalik urutan agar minggu terbaru selalu di baris teratas
+        # Membalik urutan agar minggu terbaru di atas
         df_ringkasan_tabel = df_ringkasan_tabel.iloc[::-1]
         
-        # Styling untuk arah
         def color_arah(val):
             if str(val) == 'Naik':
                 return 'color: #ff4b4b; font-weight: bold;'
@@ -237,7 +252,6 @@ if not df_ringkasan.empty and not df_top5.empty:
                 return 'color: #09ab3b; font-weight: bold;'
             return ''
         
-        # Format angka
         def format_growth(val):
             try:
                 return f"{float(val):.3f}%"
@@ -246,24 +260,34 @@ if not df_ringkasan.empty and not df_top5.empty:
         
         df_ringkasan_tabel['Growth IPH (%)'] = df_ringkasan_tabel['Growth IPH (%)'].apply(format_growth)
             
-        # Tampilkan tabel full width
         st.dataframe(df_ringkasan_tabel.style.map(color_arah, subset=['Arah']), 
                      use_container_width=True, hide_index=True)
+
 
     # ==========================================
     # TAB 2: TOP 5 ANDIL
     # ==========================================
     with tab2:
         st.markdown("#### Tabel Top 5 Komoditas Penyumbang Andil per Minggu")
-        list_minggu = df_top5['Minggu'].unique()
         
-        if len(list_minggu) > 0:
-            # Filter diletakkan berdampingan dengan tabel
-            col_filter, col_space = st.columns([1, 2])
-            with col_filter:
-                selected_minggu = st.selectbox("Pilih Periode Minggu:", reversed(list_minggu))
+        list_tahun_top5 = sorted(df_top5['Tahun'].dropna().unique().tolist(), reverse=True)
+        
+        if len(list_tahun_top5) > 0:
+            # MEMBUAT FILTER BERTINGKAT (CASCADING DROPDOWN)
+            col_filter1, col_filter2 = st.columns(2)
+            
+            with col_filter1:
+                selected_tahun_tab2 = st.selectbox("1️⃣ Pilih Tahun:", list_tahun_top5, key="filter_tab2_tahun")
                 
-            filtered_top5 = df_top5[df_top5['Minggu'] == selected_minggu].drop(columns=['Minggu'])
+            # Filter Data Top 5 berdasarkan tahun yang dipilih
+            df_top5_year = df_top5[df_top5['Tahun'] == selected_tahun_tab2]
+            list_minggu = df_top5_year['Minggu'].unique()
+            
+            with col_filter2:
+                selected_minggu = st.selectbox("2️⃣ Pilih Periode Minggu:", reversed(list_minggu), key="filter_tab2_minggu")
+                
+            # Menghapus kolom Minggu dan Tahun sebelum ditampilkan ke tabel
+            filtered_top5 = df_top5_year[df_top5_year['Minggu'] == selected_minggu].drop(columns=['Minggu', 'Tahun'])
             
             def style_keterangan_andil(row):
                 if 'KENAIKAN' in str(row['Keterangan']):
@@ -272,7 +296,8 @@ if not df_ringkasan.empty and not df_top5.empty:
                     return ['color: #09ab3b; font-weight: bold;'] * len(row)
                 return [''] * len(row)
 
+            st.markdown("<br>", unsafe_allow_html=True) # Tambah sedikit jarak
             st.dataframe(filtered_top5.style.apply(style_keterangan_andil, axis=1), use_container_width=True, hide_index=True)
             
 else:
-    st.warning("Data belum berhasil diproses. Pastikan file di dalam `data_arsip/` memiliki format sheet 'Ringkasan' dan 'Top 5'.")
+    st.warning("Data belum berhasil diproses. Pastikan file di dalam folder `data_arsip/` memiliki format sheet 'Ringkasan' dan 'Top 5'.")
