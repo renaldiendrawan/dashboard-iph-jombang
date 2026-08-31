@@ -151,49 +151,47 @@ if not df_ringkasan.empty and not df_top5.empty:
     # TAB 1: GRAFIK TREN & TABEL RINGKASAN
     # ==========================================
     with tab1:
-        # Layout kolom: Grafik 70%, Tabel 30%
-        col_grafik, col_tabel = st.columns([7, 3])
+        # 1. Menampilkan Grafik Lebar Penuh
+        st.markdown("#### Tren Historis Growth IPH")
+        df_ringkasan['Growth IPH (%)'] = pd.to_numeric(df_ringkasan['Growth IPH (%)'], errors='coerce')
+        fig = px.line(df_ringkasan, x='Bulan - Minggu', y='Growth IPH (%)', markers=True, 
+                      hover_data=['Rentang Tanggal', 'Arah'])
+        fig.update_traces(line=dict(color='#F58220', width=3), marker=dict(size=8, color='#022B69'))
+        fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.8)
+        fig.update_layout(xaxis_title="", yaxis_title="Growth IPH (%)", margin=dict(t=10, b=20),
+                          plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig, use_container_width=True)
         
-        with col_grafik:
-            st.markdown("#### Tren Historis Growth IPH")
-            df_ringkasan['Growth IPH (%)'] = pd.to_numeric(df_ringkasan['Growth IPH (%)'], errors='coerce')
-            fig = px.line(df_ringkasan, x='Bulan - Minggu', y='Growth IPH (%)', markers=True, 
-                          hover_data=['Rentang Tanggal', 'Arah'])
-            fig.update_traces(line=dict(color='#F58220', width=3), marker=dict(size=8, color='#022B69'))
-            fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.8)
-            fig.update_layout(xaxis_title="", yaxis_title="Growth IPH (%)", margin=dict(t=10, b=20),
-                              plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig, use_container_width=True)
+        st.markdown("---") # Garis pembatas
+        
+        # 2. Menampilkan Tabel di Bawah Grafik
+        st.markdown("#### Tabel Data Ringkasan")
+        # Sekarang kita bisa memasukkan kolom 'Rentang Tanggal' karena layarnya luas
+        df_ringkasan_tabel = df_ringkasan[['Bulan - Minggu', 'Rentang Tanggal', 'Growth IPH (%)', 'Arah']].copy()
+        
+        # Membalik urutan agar minggu terbaru selalu di baris teratas
+        df_ringkasan_tabel = df_ringkasan_tabel.iloc[::-1]
+        
+        # Styling untuk arah
+        def color_arah(val):
+            if str(val) == 'Naik':
+                return 'color: #ff4b4b; font-weight: bold;'
+            elif str(val) == 'Turun':
+                return 'color: #09ab3b; font-weight: bold;'
+            return ''
+        
+        # Format angka
+        def format_growth(val):
+            try:
+                return f"{float(val):.3f}%"
+            except:
+                return val
+        
+        df_ringkasan_tabel['Growth IPH (%)'] = df_ringkasan_tabel['Growth IPH (%)'].apply(format_growth)
             
-        with col_tabel:
-            st.markdown("#### Tabel Data Ringkasan")
-            # Hanya mengambil kolom yang penting dan mengurutkan dari data terbaru
-            df_ringkasan_tabel = df_ringkasan[['Bulan - Minggu', 'Growth IPH (%)', 'Arah']].copy()
-            # Membalik urutan agar minggu terbaru di atas
-            df_ringkasan_tabel = df_ringkasan_tabel.iloc[::-1]
-            
-            # Styling untuk arah (Hijau turun, Merah naik)
-            def color_arah(val):
-                if str(val) == 'Naik':
-                    return 'color: #ff4b4b; font-weight: bold;'
-                elif str(val) == 'Turun':
-                    return 'color: #09ab3b; font-weight: bold;'
-                return ''
-            
-            # Menerapkan format ke kolom Growth IPH terlebih dahulu agar rapi
-            # Jika ada teks seperti "Data tidak tersedia", biarkan saja
-            def format_growth(val):
-                try:
-                    return f"{float(val):.3f}%"
-                except:
-                    return val
-            
-            df_ringkasan_tabel['Growth IPH (%)'] = df_ringkasan_tabel['Growth IPH (%)'].apply(format_growth)
-                
-            # Menggunakan map karena Streamlit Cloud memakai Pandas versi terbaru
-            st.dataframe(df_ringkasan_tabel.style.map(color_arah, subset=['Arah']), 
-                         use_container_width=True, hide_index=True, height=450)
-
+        # Tampilkan tabel full width
+        st.dataframe(df_ringkasan_tabel.style.map(color_arah, subset=['Arah']), 
+                     use_container_width=True, hide_index=True)
 
     # ==========================================
     # TAB 2: TOP 5 ANDIL
