@@ -114,10 +114,24 @@ uploaded_file = st.sidebar.file_uploader("Tambah File Excel Baru (.xlsx)", type=
 
 if uploaded_file is not None:
     file_path = os.path.join(DATA_DIR, uploaded_file.name)
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    st.sidebar.success(f"File '{uploaded_file.name}' berhasil ditambahkan ke arsip!")
-    st.rerun()
+    file_bytes = uploaded_file.getvalue()
+    
+    # Deteksi pintar: Cek apakah file sudah ada dan isinya sama persis
+    is_new = True
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            if f.read() == file_bytes:
+                is_new = False # File sudah ada dan sama, tidak perlu di-refresh ulang
+                
+    if is_new:
+        with open(file_path, "wb") as f:
+            f.write(file_bytes)
+        st.sidebar.success(f"Data baru dari '{uploaded_file.name}' berhasil diproses!")
+        import time
+        time.sleep(1) # Memberi jeda 1 detik agar server cloud selesai menyimpan
+        st.rerun()
+    else:
+        st.sidebar.success(f"File '{uploaded_file.name}' sedang aktif digunakan.")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("**File Tersimpan di Server:**")
