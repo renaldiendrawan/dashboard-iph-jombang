@@ -121,9 +121,38 @@ if uploaded_file is not None:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("**File Tersimpan di Server:**")
+
+# Fungsi Pop-up Dialog untuk Konfirmasi Hapus
+@st.dialog("⚠️ Konfirmasi Hapus File")
+def hapus_file_dialog(nama_file):
+    st.warning(f"Apakah Anda yakin ingin menghapus file **{nama_file}**?")
+    st.markdown("Data bulan terkait akan ikut terhapus dari tabel dan grafik dashboard.")
+    
+    col_ya, col_batal = st.columns(2)
+    with col_ya:
+        if st.button("Ya, Hapus Data", type="primary", use_container_width=True):
+            file_path_hapus = os.path.join(DATA_DIR, nama_file)
+            if os.path.exists(file_path_hapus):
+                try:
+                    os.remove(file_path_hapus)
+                except Exception as e:
+                    st.error(f"Gagal menghapus file. Mungkin file sedang digunakan. Error: {e}")
+            st.rerun() # Refresh aplikasi setelah dihapus
+    
+    with col_batal:
+        if st.button("Batal", use_container_width=True):
+            st.rerun() # Menutup dialog jika batal
+
+# Menampilkan daftar file beserta tombol Hapus
 for f_name in os.listdir(DATA_DIR):
     if f_name.endswith(".xlsx"):
-        st.sidebar.caption(f"📄 {f_name}")
+        col_nama, col_tombol = st.sidebar.columns([5, 1])
+        with col_nama:
+            st.caption(f"📄 {f_name}")
+        with col_tombol:
+            # Membuat tombol X yang unik untuk setiap file menggunakan parameter 'key'
+            if st.button("❌", key=f"del_{f_name}", help=f"Hapus {f_name}"):
+                hapus_file_dialog(f_name)
 
 # --- MEMUAT DATA ---
 df_ringkasan, df_top5 = load_all_data()
