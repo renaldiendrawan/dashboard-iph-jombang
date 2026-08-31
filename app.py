@@ -162,7 +162,14 @@ if not df_ringkasan.empty and not df_top5.empty:
         df_ringkasan['Growth IPH (%)'] = pd.to_numeric(df_ringkasan['Growth IPH (%)'], errors='coerce')
         fig = px.line(df_ringkasan, x='Bulan - Minggu', y='Growth IPH (%)', markers=True, 
                       hover_data=['Rentang Tanggal', 'Arah'])
-        fig.update_traces(line=dict(color='#F58220', width=3), marker=dict(size=8, color='#022B69'))
+        
+        # MENYAMBUNGKAN GARIS YANG PUTUS (CONNECT GAPS)
+        fig.update_traces(
+            line=dict(color='#F58220', width=3), 
+            marker=dict(size=8, color='#022B69'),
+            connectgaps=True  # Baris ajaib untuk menyambungkan titik yang hilang
+        )
+        
         fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.8)
         fig.update_layout(xaxis_title="", yaxis_title="Growth IPH (%)", margin=dict(t=10, b=20),
                           plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
