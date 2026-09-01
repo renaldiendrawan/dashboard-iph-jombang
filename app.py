@@ -37,6 +37,7 @@ if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
 # --- FUNGSI UNTUK MENGGABUNGKAN SELURUH DATA DARI ARSIP ---
+# --- FUNGSI UNTUK MENGGABUNGKAN SELURUH DATA DARI ARSIP ---
 def load_all_data():
     all_files = glob.glob(os.path.join(DATA_DIR, "*.xlsx"))
     
@@ -45,13 +46,10 @@ def load_all_data():
     
     for file in all_files:
         try:
-            # PERBAIKAN: Menggunakan 'with' agar file otomatis DITUTUP (kunci dilepas) setelah dibaca
             with pd.ExcelFile(file, engine='openpyxl') as xls:
-                
                 # 1. Load Ringkasan
                 sheet_ringkasan = [s for s in xls.sheet_names if "ringkasan" in s.lower()]
                 if sheet_ringkasan:
-                    # Membaca langsung dari objek 'xls' yang sudah dibuka
                     df_r = pd.read_excel(xls, sheet_name=sheet_ringkasan[0], skiprows=2)
                     if 'Bulan - Minggu' in df_r.columns:
                         df_r = df_r.dropna(subset=['Bulan - Minggu'])
@@ -60,18 +58,23 @@ def load_all_data():
                         st.sidebar.error(f"Kolom 'Bulan - Minggu' tidak ditemukan di {os.path.basename(file)}.")
                 
                 # 2. Load Top 5
-                sheet_top5 = [s for s in xls.sheet_names if "top 5" in s.lower()]
+                # Dibuat lebih longgar jika penamaan sheet-nya "Top5", "Top 5", atau "Andil"
+                sheet_top5 = [s for s in xls.sheet_names if "top 5" in s.lower() or "top5" in s.lower() or "andil" in s.lower()]
                 if sheet_top5:
                     df_t_raw = pd.read_excel(xls, sheet_name=sheet_top5[0], header=None)
                     current_week = None
                     for index, row in df_t_raw.iterrows():
-                        val = str(row[0]).strip()
-                        if "MINGGU" in val and "s/d" in val:
-                            current_week = val
-                        elif current_week and val.isdigit():
+                        val_asli = str(row[0]).strip()
+                        # Mengubah teks sementara menjadi HURUF BESAR SEMUA untuk pengecekan
+                        val_upper = val_asli.upper() 
+                        
+                        # LOGIKA BARU: Kebal huruf besar/kecil, mengecek keberadaan kata "MINGGU" dan penanda waktu
+                        if "MINGGU" in val_upper and ("S/D" in val_upper or "202" in val_upper or "-" in val_upper):
+                            current_week = val_asli
+                        elif current_week and val_asli.isdigit():
                             list_top5.append({
                                 "Minggu": current_week,
-                                "Peringkat": int(val),
+                                "Peringkat": int(val_asli),
                                 "Komoditas": row[1],
                                 "Bobot (wi)": row[2],
                                 "Pertumbuhan Harga (%)": row[3],
