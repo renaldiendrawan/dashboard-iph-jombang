@@ -184,8 +184,18 @@ if not df_top5.empty:
 # --- TAMPILAN UTAMA (MENGGUNAKAN TABS) ---
 if not df_ringkasan.empty and not df_top5.empty:
     
-    # Menyiapkan data metrik terbaru (dari keseluruhan data)
-    latest_data = df_ringkasan.iloc[-1]
+    # --- PERBAIKAN: Mencari data terakhir yang angkanya valid ---
+    # Mengecek kolom Growth IPH, jika diubah ke angka tidak error (bukan teks), tandai sebagai True (valid)
+    valid_mask = pd.to_numeric(df_ringkasan['Growth IPH (%)'], errors='coerce').notna()
+    df_valid_ringkasan = df_ringkasan[valid_mask]
+    
+    if not df_valid_ringkasan.empty:
+        # Ambil baris paling bawah dari data yang sudah disaring (benar-benar ada angkanya)
+        latest_data = df_valid_ringkasan.iloc[-1]
+    else:
+        # Fallback cadangan
+        latest_data = df_ringkasan.iloc[-1]
+        
     minggu_terakhir = latest_data.get('Bulan - Minggu', '-')
     rentang_tanggal = latest_data.get('Rentang Tanggal', '-')
     growth_terakhir = latest_data.get('Growth IPH (%)', 0)
