@@ -58,18 +58,23 @@ def load_all_data():
                         st.sidebar.error(f"Kolom 'Bulan - Minggu' tidak ditemukan di {os.path.basename(file)}.")
                 
                 # 2. Load Top 5
-                # Dibuat lebih longgar jika penamaan sheet-nya "Top5", "Top 5", atau "Andil"
                 sheet_top5 = [s for s in xls.sheet_names if "top 5" in s.lower() or "top5" in s.lower() or "andil" in s.lower()]
                 if sheet_top5:
                     df_t_raw = pd.read_excel(xls, sheet_name=sheet_top5[0], header=None)
                     current_week = None
                     for index, row in df_t_raw.iterrows():
                         val_asli = str(row[0]).strip()
-                        # Mengubah teks sementara menjadi HURUF BESAR SEMUA untuk pengecekan
                         val_upper = val_asli.upper() 
                         
-                        # LOGIKA BARU: Kebal huruf besar/kecil, mengecek keberadaan kata "MINGGU" dan penanda waktu
-                        if "MINGGU" in val_upper and ("S/D" in val_upper or "202" in val_upper or "-" in val_upper):
+                        # LOGIKA PENDETEKSI BARU YANG LEBIH CERDAS
+                        # Memeriksa apakah baris adalah judul minggu (Contoh: "JAN 2026 - M1..." atau "JAN 2025 - MINGGU M1...")
+                        # Syarat: Harus mengandung "-" DAN "M1"/"M2"/"M3"/"M4"/"M5" DAN TIDAK mengandung kata "KOMODITAS"
+                        
+                        is_judul_minggu = ("-" in val_upper) and \
+                                          ("M1" in val_upper or "M2" in val_upper or "M3" in val_upper or "M4" in val_upper or "M5" in val_upper) and \
+                                          ("KOMODITAS" not in val_upper)
+                        
+                        if is_judul_minggu:
                             current_week = val_asli
                         elif current_week and val_asli.isdigit():
                             list_top5.append({
