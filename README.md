@@ -25,7 +25,6 @@ Jika Anda ingin menjalankan atau mengembangkan aplikasi ini di komputer lokal, i
 **1. Clone Repositori**
 ```bash
 git clone [https://github.com/renaldiendrawan/dashboard-iph-jombang.git](https://github.com/renaldiendrawan/dashboard-iph-jombang.git)
-cd NAMA_REPOSITORI_ANDA
 
 ```
 
