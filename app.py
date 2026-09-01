@@ -183,8 +183,19 @@ if not df_ringkasan.empty and not df_top5.empty:
         
         fig.update_traces(line=dict(color='#F58220', width=3), marker=dict(size=8, color='#022B69'), connectgaps=True)
         fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.8)
-        fig.update_layout(xaxis_title="", yaxis_title="Growth IPH (%)", margin=dict(t=10, b=20),
-                          plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        # PERBAIKAN: Kembali ke sistem otomatis yang lebih rapi
+        fig.update_layout(
+            xaxis_title="", 
+            yaxis_title="Growth IPH (%)", 
+            margin=dict(t=10, b=20),
+            plot_bgcolor='rgba(0,0,0,0)', 
+            paper_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(
+                type='category',     # Menjaga agar garis tetap rapi dan tidak menebak tanggal
+                tickmode='auto',     # Sistem otomatis mengatur kerapatan label
+                tickangle=-90        # (Opsional) Memaksa teks miring 90 derajat ke atas agar lebih banyak label yang bisa muat
+            )
+        )
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("---")
