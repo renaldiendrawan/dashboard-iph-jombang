@@ -36,8 +36,8 @@ st.markdown("""
 # Masukkan tautan Export Google Sheets Anda di dalam tanda kutip di bawah ini.
 # Anda bisa menambahkan koma jika memiliki lebih dari satu tautan (misal sheet 2025 dan 2026 terpisah).
 GOOGLE_SHEETS_URLS = [
-    "https://docs.google.com/spreadsheets/d/1r9-A9_QL6jWRlq6KQcri1pQJtDGoc53JYjZJvpff6ZA/export?format=xlsx",
-    "https://docs.google.com/spreadsheets/d/1C_k5IDhvxKU3mD8NbYGw6bWFixpBAKD4gcRxFwgGBsk/export?format=xlsx"
+    "https://docs.google.com/spreadsheets/d/15w-rC0nkDOh3LBGJdbIlQA1rl5OD_15WjRkBtOV2isw/export?format=xlsx",
+    "https://docs.google.com/spreadsheets/d/1NJmlifeestOBMny-nWu4uaCIQQcfvphKyAKxYrmdp9Q/export?format=xlsx"
 ]
 
 # --- FUNGSI MEMUAT DATA DARI CLOUD ---
